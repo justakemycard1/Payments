@@ -1,0 +1,185 @@
+⏺ Based on my analysis of the mobile app's payment system, here's the comprehensive information for your web application:
+
+  Payment System Analysis
+
+  Current Implementation
+
+  The mobile app has a PaymentScreen that serves as a financial dashboard with mock data. The payment functionality is
+  currently not integrated with actual payment processors (Stripe, Razorpay, etc.) and uses placeholder implementations.
+
+  Key Components Found
+
+  PaymentScreen.js - Main payment dashboard with:
+  - Revenue analytics (monthly, lifetime, pending, average)
+  - Transaction history display
+  - Payment method breakdown (UPI, Bank, Card, Cash)
+  - Quick actions (invoices, reminders, payment links, export)
+
+  Web Application Requirements
+
+⏺ Database Schema
+
+  -- Payments table
+  CREATE TABLE payments (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id),
+    contract_id INTEGER REFERENCES contracts(id),
+    client_name VARCHAR(255) NOT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    currency VARCHAR(3) DEFAULT 'INR',
+    status VARCHAR(20) CHECK (status IN ('pending', 'completed', 'failed', 'cancelled')),
+    payment_method VARCHAR(20) CHECK (payment_method IN ('upi', 'bank', 'card', 'cash', 'crypto')),
+    transaction_id VARCHAR(255) UNIQUE,
+    gateway_response JSONB,
+    contract_title VARCHAR(255),
+    due_date DATE,
+    paid_date TIMESTAMP,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+  );
+
+  -- Payment analytics cache
+  CREATE TABLE payment_analytics (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id),
+    month_year VARCHAR(7), -- Format: '2025-01'
+    monthly_revenue DECIMAL(12,2),
+    pending_payments DECIMAL(12,2),
+    total_transactions INTEGER,
+    payment_methods JSONB,
+    created_at TIMESTAMP DEFAULT NOW()
+  );
+
+  -- Invoices table
+  CREATE TABLE invoices (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id),
+    payment_id INTEGER REFERENCES payments(id),
+    invoice_number VARCHAR(50) UNIQUE,
+    pdf_path VARCHAR(500),
+    sent_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT NOW()
+  );
+
+  API Endpoints
+
+  // Payment Analytics
+  GET /api/payments/analytics
+  GET /api/payments/analytics/:period (monthly, quarterly, yearly)
+
+  // Transaction Management
+  GET /api/payments/transactions
+  GET /api/payments/transactions/:transactionId
+  POST /api/payments/transactions
+  PUT /api/payments/transactions/:transactionId
+  DELETE /api/payments/transactions/:transactionId
+
+  // Payment Methods
+  GET /api/payments/methods
+  POST /api/payments/methods/setup
+  PUT /api/payments/methods/:methodId
+  DELETE /api/payments/methods/:methodId
+
+  // Invoice Management
+  GET /api/payments/invoices
+  POST /api/payments/invoices
+  GET /api/payments/invoices/:invoiceId/pdf
+  POST /api/payments/invoices/:invoiceId/send
+
+  // Payment Links (for client payment)
+  POST /api/payments/links
+  GET /api/payments/links/:linkId
+  POST /api/payments/links/:linkId/pay
+
+  // Export & Reports
+  GET /api/payments/export/:format (csv, pdf, excel)
+  GET /api/payments/reports/:type
+
+  Web App Features Required
+
+  1. Payment Dashboard
+
+  - Revenue Overview: Monthly/yearly revenue charts
+  - Transaction History: Searchable, filterable transaction list
+  - Payment Analytics: Growth trends, method breakdowns
+  - Top Clients: High-value client analysis
+
+  2. Transaction Management
+
+  - Create Transaction: Manual payment recording
+  - Edit Transaction: Update payment details and status
+  - Transaction Detail: Full payment information view
+  - Bulk Operations: Mass status updates, exports
+
+  3. Invoice System
+
+  - Invoice Generation: PDF creation from payment data
+  - Email Integration: Automated invoice sending
+  - Template Management: Customizable invoice templates
+  - Invoice Tracking: Delivery confirmation and view tracking
+
+  4. Payment Gateway Integration
+
+  - Stripe Integration: For international payments
+  - Razorpay Integration: For Indian market (UPI, cards, net banking)
+  - Payment Links: Shareable payment URLs for clients
+  - Webhook Handling: Real-time payment status updates
+
+  5. Client Payment Portal
+
+  - Unique Payment Links: Secure token-based payment access
+  - Payment Form: Multi-method payment interface
+  - Payment Confirmation: Receipt and confirmation system
+  - Payment History: Client view of their payment records
+
+  Authentication Integration
+
+  Token Requirements: Same Firebase + custom JWT system as contracts
+  Access Control: Payment data restricted to payment creators and admins
+  Audit Logging: Track all payment modifications and access
+
+  Data Models
+
+  // Payment Object
+  {
+    id: integer,
+    userId: integer,
+    contractId: integer,
+    clientName: string,
+    amount: decimal,
+    currency: string,
+    status: enum,
+    paymentMethod: enum,
+    transactionId: string,
+    gatewayResponse: object,
+    contractTitle: string,
+    dueDate: date,
+    paidDate: timestamp,
+    createdAt: timestamp,
+    updatedAt: timestamp
+  }
+
+  // Analytics Object
+  {
+    monthlyRevenue: decimal,
+    pendingPayments: decimal,
+    lifetimeEarnings: decimal,
+    averagePayment: decimal,
+    monthlyGrowth: percentage,
+    recentTransactions: array,
+    paymentMethods: object,
+    topClients: array,
+    contractPerformance: array
+  }
+
+  Implementation Priority
+
+  1. Payment Dashboard - Core analytics and overview
+  2. Transaction CRUD - Basic payment management
+  3. Payment Gateway Setup - Stripe/Razorpay integration
+  4. Invoice System - PDF generation and email
+  5. Client Payment Portal - Public payment interface
+
+  The payment system integrates with the contract system you analyzed earlier, where payments are linked to specific
+  contracts and clients.
+
